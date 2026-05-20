@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --background: 250 250 250;
+    --foreground: 15 15 18;
+    --card: 255 255 255;
+    --card-foreground: 15 15 18;
+    --border: 226 226 232;
+    --muted: 242 242 247;
+    --muted-foreground: 120 120 135;
+    --primary: 15 15 18;
+    --primary-foreground: 250 250 250;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 13 13 16;
+    --foreground: 240 240 245;
+    --card: 20 20 24;
+    --card-foreground: 240 240 245;
+    --border: 38 38 46;
+    --muted: 28 28 34;
+    --muted-foreground: 110 110 125;
+    --primary: 240 240 245;
+    --primary-foreground: 13 13 16;
+  }
+
+  * {
+    border-color: rgb(var(--border));
+  }
+
+  body {
+    background-color: rgb(var(--background));
+    color: rgb(var(--foreground));
+  }
+
+  .dark ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .dark ::-webkit-scrollbar-track {
+    background: rgb(var(--background));
+  }
+
+  .dark ::-webkit-scrollbar-thumb {
+    background: rgb(var(--border));
+    border-radius: 3px;
+  }
+
+  :focus-visible {
+    outline: none;
+    ring: 2px;
+  }
+}
+
+@theme {
+  --color-background: rgb(var(--background));
+  --color-foreground: rgb(var(--foreground));
+  --color-card: rgb(var(--card));
+  --color-border: rgb(var(--border));
+  --color-muted: rgb(var(--muted));
+  --color-muted-foreground: rgb(var(--muted-foreground));
+  --color-primary: rgb(var(--primary));
+  --color-primary-foreground: rgb(var(--primary-foreground));
+  --font-family-sans: var(--font-geist-sans), system-ui, sans-serif;
+  --font-family-mono: var(--font-geist-mono), monospace;
+  --radius: 0.5rem;
+}

@@ -1,0 +1,116 @@
+﻿import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useTaskStore } from "@/store/tasks";
+import type { TaskWithLabels } from "@/types";
+import type { Priority, TaskStatus } from "@prisma/client";
+
+const TASKS_KEY = ["tasks"];
+
+type TaskCreatePayload = {
+  title: string;
+  description: string | null;
+  status: TaskStatus;
+  priority: Priority;
+  dueDate: string | null;
+  labelIds: string[];
+  position?: number;
+};
+
+type TaskUpdatePayload = {
+  id: string;
+  title?: string;
+  description?: string | null;
+  status?: TaskStatus;
+  priority?: Priority;
+  dueDate?: string | null;
+  position?: number;
+  labelIds?: string[];
+};
+
+async function fetchTasks(): Promise<TaskWithLabels[]> {
+  const res = await fetch("/api/tasks");
+  if (!res.ok) throw new Error("Failed to fetch tasks");
+  return res.json();
+}
+
+export function useTasks() {
+  const setTasks = useTaskStore((s) => s.setTasks);
+
+  const query = useQuery<TaskWithLabels[]>({
+    queryKey: TASKS_KEY,
+    queryFn: fetchTasks,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // React Query v5 removed onSuccess from useQuery — sync via useEffect instead
+  useEffect(() => {
+    if (query.data) setTasks(query.data);
+  }, [query.data]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return query;
+}
+
+export function useCreateTask() {
+  const queryClient = useQueryClient();
+  const setTasks = useTaskStore((s) => s.setTasks);
+
+  return useMutation({
+    mutationFn: async (data: TaskCreatePayload) => {
+      const res = await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to create task");
+      return res.json() as Promise<TaskWithLabels>;
+    },
+    onSuccess: (task) => {
+      const current = queryClient.getQueryData<TaskWithLabels[]>(TASKS_KEY) ?? [];
+      const next = [...current, task];
+      queryClient.setQueryData(TASKS_KEY, next);
+      setTasks(next);
+    },
+  });
+}
+
+export function useUpdateTask() {
+  const queryClient = useQueryClient();
+  const setTasks = useTaskStore((s) => s.setTasks);
+
+  return useMutation({
+    mutationFn: async (payload: TaskUpdatePayload) => {
+      const { id, ...data } = payload;
+      const res = await fetch(`/api/tasks/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to update task");
+      return res.json() as Promise<TaskWithLabels>;
+    },
+    onSuccess: (task) => {
+      const current = queryClient.getQueryData<TaskWithLabels[]>(TASKS_KEY) ?? [];
+      const next = current.map((item) => (item.id === task.id ? task : item));
+      queryClient.setQueryData(TASKS_KEY, next);
+      setTasks(next);
+    },
+  });
+}
+
+export function useDeleteTask() {
+  const queryClient = useQueryClient();
+  const setTasks = useTaskStore((s) => s.setTasks);
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/tasks/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete task");
+    },
+    onSuccess: (_data, id) => {
+      const current = queryClient.getQueryData<TaskWithLabels[]>(TASKS_KEY) ?? [];
+      const next = current.filter((task) => task.id !== id);
+      queryClient.setQueryData(TASKS_KEY, next);
+      setTasks(next);
+    },
+  });
+}
